@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+
+import argparse
+import re
+
+from bs4 import BeautifulSoup
+
+
+def main(argv):
+    parser = argparse.ArgumentParser(
+        description='Extract NoMachine Product Download URLs')
+    parser.add_argument('files', type=str, nargs='+',
+                        help='HTML files to search for Product Download URLS')
+    args = parser.parse_args()
+    extract_product(args.files)
+
+
+def extract_product(files):
+    download_re = re.compile('/download/.*&id=')
+    onclick_location_re = re.compile("location\\.href='(/download/[^']+)'")
+    product_pages = set()
+    for f in files:
+        print(f)
+        with open(f) as fp:
+            soup = BeautifulSoup(fp, 'html.parser')
+            for a in soup.find_all(name='a', attrs={'href': download_re}):
+                product_pages.add(a.get('href'))
+            for div in soup.find_all(
+                    name='div', attrs={'onclick': onclick_location_re}):
+                onclick = div.get('onclick')
+                product_pages.add(onclick_location_re.search(onclick).group(1))
+
+    for product in sorted(product_pages):
+        print(product)
+
+
+if __name__ == '__main__':
+    import sys
+    sys.exit(main(sys.argv))
