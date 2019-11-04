@@ -21,19 +21,19 @@ product_download_page.list: base_download.list
 	echo +++ Fetching Producting Download Pages
 	rm -rvf $(PRODUCT_PAGES_D)
 	mkdir -p $(PRODUCT_PAGES_D)
-	$(WGET) --base='$(BASE_URL)' --input-file $< --directory-prefix $(PRODUCT_FILES_D)
+	$(WGET) --base='$(BASE_URL)' --input-file $< --directory-prefix $(PRODUCT_PAGES_D)
 	find $(PRODUCT_PAGES_D) -type f | sort > $@.new
-	touch --reference $< $@.new
+	# touch --reference $< $@.new
 	mv -v $@.new $@
 CLEANFILES += product_page.list
 CLEANDIRS += $(PRODUCT_PAGES_D)
 BASE_URL = http://nomachine.com
-PRODUCT_FILES_D = $(DESTDIR)/product_pages.d
+PRODUCT_PAGES_D = $(DESTDIR)/product_pages.d
 
 base_download.list: base_download extract_product_download_pages
 	echo +++ Generating Product Download Page List
-	find $(BASE_DOWNLOAD_D) -type f | xargs ./extract_download_pages | tee $@.new
-	touch --reference $< $@.new
+	find $(BASE_DOWNLOAD_D) -type f | xargs ./extract_product_download_pages | tee $@.new
+	# touch --reference $< $@.new
 	mv -v $@.new $@
 CLEANFILES += base_download.list
 

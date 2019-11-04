@@ -8,29 +8,49 @@ import re
 from bs4 import BeautifulSoup
 
 
+class Rule(object):
+    """BeautifulSoup Rules
+
+    """
+    def __init__(self, regex, name, attrs):
+        self.re = re.compile(regex)
+        self.name = name
+        self.attrs = attrs
+
+    def find_all_get_group(self, soup):
+        founditems = set()
+        for item in soup.find_all(name=self.name,
+                                  attrs={self.attrs: self.name}):
+            founditems.add(self.re.search(item.get(self.attrs)).group(1))
+        return founditems
+
+
 def main(argv):
+    flavors = dict(
+        product=(Rule(regex='^(/download/.*&id=.*)$', name='a', attr='href'),
+                 Rule(regex="location\\.href='(/download/[^']+)'", name='div',
+                      attr='onclick')),
+        download=(Rule(regex="^saveck\\('[^']+','([^']+)'\\)", name='a',
+                       attr='onclick'),)
+    )
     parser = argparse.ArgumentParser(
         description='Extract NoMachine Product Download URLs')
+    parser.add_argument('flavor', type=str,
+                        help='parser flavor "product" or "download"')
     parser.add_argument('files', type=str, nargs='+',
                         help='HTML files to search for Product Download URLS')
     args = parser.parse_args()
-    extract_product(args.files)
+    rules = flavors.get(args.flavor)
+    extract(rules, args.files)
 
 
-def extract_product(files):
-    download_re = re.compile('/download/.*&id=')
-    onclick_location_re = re.compile("location\\.href='(/download/[^']+)'")
+def extract(rules, files):
     product_pages = set()
     for f in files:
-        print(f)
         with open(f) as fp:
-            soup = BeautifulSoup(fp, 'html.parser')
-            for a in soup.find_all(name='a', attrs={'href': download_re}):
-                product_pages.add(a.get('href'))
-            for div in soup.find_all(
-                    name='div', attrs={'onclick': onclick_location_re}):
-                onclick = div.get('onclick')
-                product_pages.add(onclick_location_re.search(onclick).group(1))
+            with BeautifulSoup(fp, 'html.parser') as soup:
+                for rule in rules:
+                    product_pages.add(rule.find_all(soup))
 
     for product in sorted(product_pages):
         print(product)
