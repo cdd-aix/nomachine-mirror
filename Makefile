@@ -30,10 +30,11 @@ CLEANDIRS += $(PRODUCT_PAGES_D)
 BASE_URL = http://nomachine.com
 PRODUCT_PAGES_D = $(DESTDIR)/product_pages.d
 
-base_download.list: base_download extract_product_download_pages
+base_download.list: base_download extract
 	echo +++ Generating Product Download Page List
-	find $(BASE_DOWNLOAD_D) -type f | xargs ./extract_product_download_pages | tee $@.new
-	# touch --reference $< $@.new
+	find $(BASE_DOWNLOAD_D) -type f | xargs ./extract product > $@.new
+	[ -s $@.new ] || rm -vf $@.new
+	cat $@.new
 	mv -v $@.new $@
 CLEANFILES += base_download.list
 

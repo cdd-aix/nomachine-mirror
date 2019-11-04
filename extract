@@ -20,18 +20,18 @@ class Rule(object):
     def find_all_get_group(self, soup):
         founditems = set()
         for item in soup.find_all(name=self.name,
-                                  attrs={self.attrs: self.name}):
+                                  attrs={self.attrs: self.re}):
             founditems.add(self.re.search(item.get(self.attrs)).group(1))
         return founditems
 
 
 def main(argv):
     flavors = dict(
-        product=(Rule(regex='^(/download/.*&id=.*)$', name='a', attr='href'),
+        product=(Rule(regex='^(/download/.*&id=.*)$', name='a', attrs='href'),
                  Rule(regex="location\\.href='(/download/[^']+)'", name='div',
-                      attr='onclick')),
+                      attrs='onclick')),
         download=(Rule(regex="^saveck\\('[^']+','([^']+)'\\)", name='a',
-                       attr='onclick'),)
+                       attrs='onclick'),)
     )
     parser = argparse.ArgumentParser(
         description='Extract NoMachine Product Download URLs')
@@ -45,15 +45,16 @@ def main(argv):
 
 
 def extract(rules, files):
-    product_pages = set()
+    found = set()
     for f in files:
         with open(f) as fp:
-            with BeautifulSoup(fp, 'html.parser') as soup:
-                for rule in rules:
-                    product_pages.add(rule.find_all(soup))
+            soup = BeautifulSoup(fp, 'html.parser')
+            for rule in rules:
 
-    for product in sorted(product_pages):
-        print(product)
+                found.update(rule.find_all_get_group(soup))
+
+    for item in sorted(found):
+        print(item)
 
 
 if __name__ == '__main__':
