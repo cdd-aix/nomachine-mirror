@@ -1,5 +1,6 @@
-base_download
-base_download.d/
-base_download.list
-product_download_page.list
-product_pages.d/
+base_pages
+base_pages.d/
+download.list
+downloads/
+product_pages
+product_pages.*
