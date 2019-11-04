@@ -1,51 +1,43 @@
+SHELL := /bin/bash
 downloaded: download.list
-	echo +++ Fetching product files
-	mkdir -p $(DOWNLOADS)
-	$(WGET) --input-file $< --directory-prefix $(DOWNLOADS)
-	touch --reference=$< $@
+	@echo +++ Fetching product files
+	@mkdir -p $(DOWNLOADS)
+	$(WGET) --mirror --input-file $< --directory-prefix $(DOWNLOADS)
 # TODO: touch downloaded based on newest file on DOWNLOADS
 CLEANFILES += downloaded
 PRECIOUS_CLEANDIRS += $(DOWNLOADS)
 DOWNLOADS = $(DESTDIR)/downloads
 DESTDIR ?= $(PWD)
-WGET = wget --timestamping
+WGET = wget --timestamping --no-verbose
+WGET_BULK = $(WGET) --base='$(BASE_URL)' --input-file
 
-download.list: product_download_page.list extract_download_urls
-	echo +++ Generating product file list
-	./extract_download_urls < $< > $@.new
-	touch --reference=$< $@.new
-	mv -v $@.new $@
+PRODUCT_PAGES_D = $(DESTDIR)/product_pages.d
+download.list: $(wildcard $(PRODUCT_PAGES_D)/*) product_pages
+	@echo +++ Generating product file list
+	./extract download $(PRODUCT_PAGES_D)/* > $@.new
+	[ -s $@.new ] && mv -v $@.new $@
 CLEANFILES += download.list
 
-product_download_page.list: base_download.list
-	echo +++ Fetching Producting Download Pages
-	rm -rvf $(PRODUCT_PAGES_D)
-	mkdir -p $(PRODUCT_PAGES_D)
-	$(WGET) --base='$(BASE_URL)' --input-file $< --directory-prefix $(PRODUCT_PAGES_D)
-	find $(PRODUCT_PAGES_D) -type f | sort > $@.new
-	# touch --reference $< $@.new
-	mv -v $@.new $@
-CLEANFILES += product_page.list
+BASE_PAGES_D = $(DESTDIR)/base_pages.d
+product_pages: $(wildcard $(BASE_PAGES_D)/*) $(wildcard $(PRODuCT_PAGES_D)/*) base_pages
+	@echo +++ Fetching Product Pages
+	@mkdir -p $(PRODUCT_PAGES_D)
+	./extract product $(BASE_PAGES_D)/* > $@.product_pages1
+	$(WGET_BULK) $@.product_pages1 --directory-prefix $(PRODUCT_PAGES_D)
+	./extract product $(PRODUCT_PAGES_D)/* > $@.product_pages2
+	$(WGET_BULK) $@.product_pages2 --directory-prefix $(PRODUCT_PAGES_D)
+	find $(PRODUCT_PAGES_D) > $@
 CLEANDIRS += $(PRODUCT_PAGES_D)
-BASE_URL = http://nomachine.com
-PRODUCT_PAGES_D = $(DESTDIR)/product_pages.d
+CLEANFILES += product_pages
+BASE_URL = http://www.nomachine.com
 
-base_download.list: base_download extract
-	echo +++ Generating Product Download Page List
-	find $(BASE_DOWNLOAD_D) -type f | xargs ./extract product > $@.new
-	[ -s $@.new ] || rm -vf $@.new
-	cat $@.new
-	mv -v $@.new $@
-CLEANFILES += base_download.list
-
-base_download: relative.urls
-	mkdir -p $(BASE_DOWNLOAD_D)
-	$(WGET) --base='$(BASE_URL)' --input-file $< --directory-prefix $(BASE_DOWNLOAD_D)
-	touch --reference $< $@.new
-	mv -v $@.new $@
-CLEANFILES += base_download
-CLEANDIRS += $(BASE_DOWNLOAD_D)
-BASE_DOWNLOAD_D = $(DESTDIR)/base_download.d
+base_pages: relative.urls
+	@echo Fetching Base Pages
+	@mkdir -p $(BASE_PAGES_D)
+	$(WGET_BULK) $< --directory-prefix $(BASE_PAGES_D)
+	find $(BASE_PAGES_D) > $@
+CLEANFILES += base_pages
+CLEANDIRS += $(BASE_PAGES_D)
 
 clean:
 	rm -vf $(CLEANFILES)
