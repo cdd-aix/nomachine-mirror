@@ -8,7 +8,7 @@ CLEANFILES += downloaded
 PRECIOUS_CLEANDIRS += $(DOWNLOADS)
 DOWNLOADS = $(DESTDIR)/downloads
 DESTDIR ?= $(PWD)
-WGET = wget --timestamping --no-verbose
+WGET = wget --wait=5 --random-wait --waitretry=5 --timestamping --no-verbose
 WGET_BULK = $(WGET) --base='$(BASE_URL)' --input-file
 
 PRODUCT_PAGES_D = $(DESTDIR)/product_pages.d
